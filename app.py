@@ -1123,10 +1123,9 @@ with hero_col4:
 # ==========================================
 
 DATA_FILE = (
-    "data/processed/"
+    "Data/Processed/"
     "ner_landslide_training.csv"
 )
-
 
 @st.cache_data
 def load_data():
