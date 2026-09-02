@@ -46,7 +46,6 @@ from src.citizen_reporting import (
 from src.alerts import send_email_alert
 from src.sms_alert import send_sms_alert
 
-from src.computer_vision import analyse_image
 
 from src.road_connectivity import (
     assess_road_connectivity
@@ -1126,6 +1125,7 @@ DATA_FILE = (
     "Data/Processed/"
     "ner_landslide_training.csv"
 )
+
 
 @st.cache_data
 def load_data():
@@ -4172,6 +4172,8 @@ elif page == "📸 Citizen Reporting":
                 with st.spinner(
                     "Analysing uploaded image..."
                 ):
+
+                    from src.computer_vision import analyse_image
 
                     cv_result = analyse_image(
                         temp_path
