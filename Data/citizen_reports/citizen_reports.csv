@@ -1,0 +1,5 @@
+report_id,timestamp,reporter_type,issue_type,latitude,longitude,description,file_path,status
+RPT_16AA461C,2026-08-23 05:53:51,Citizen,Slope Crack,23.73,92.72,land slide,data/citizen_reports/uploads\12456558_istockphoto-1759143984-612x612.jpg,Pending Review
+RPT_6DADDF9A,2026-08-23 06:08:57,Citizen,Slope Crack,23.73,92.72,landslide,data/citizen_reports/uploads\9a742e17_istockphoto-1759143984-612x612.jpg,Pending Review
+RPT_0014095C,2026-08-23 06:11:34,Citizen,Slope Crack,23.73,92.72,landslide,data/citizen_reports/uploads\8c513139_istockphoto-1759143984-612x612.jpg,Pending Review
+RPT_F912F68A,2026-08-23 06:22:56,Citizen,Slope Crack,25.1648,93.0176,State: Assam. land slide,data/citizen_reports/uploads\b945d895_istockphoto-1759143984-612x612.jpg,Pending Review

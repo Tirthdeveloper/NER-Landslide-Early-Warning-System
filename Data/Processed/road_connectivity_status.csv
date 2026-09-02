@@ -1,0 +1,5 @@
+report_id,timestamp,latitude,longitude,issue_type,road_status,response_priority,message
+RPT_16AA461C,2026-08-23 05:53:51,23.73,92.72,Slope Crack,OPEN,P3,Road connectivity currently appears normal.
+RPT_6DADDF9A,2026-08-23 06:08:57,23.73,92.72,Slope Crack,OPEN,P3,Road connectivity currently appears normal.
+RPT_0014095C,2026-08-23 06:11:34,23.73,92.72,Slope Crack,OPEN,P3,Road connectivity currently appears normal.
+RPT_F912F68A,2026-08-23 06:22:56,25.1648,93.0176,Slope Crack,OPEN,P3,Road connectivity currently appears normal.
