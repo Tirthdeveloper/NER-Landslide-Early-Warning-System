@@ -1,0 +1,17 @@
+streamlit
+pandas
+numpy
+requests
+python-dotenv
+folium
+streamlit-folium
+scikit-learn
+xgboost
+joblib
+langchain-groq
+groq
+twilio
+Pillow
+opencv-python-headless
+ultralytics
+rasterio
