@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>NER Landslide Early Warning Command Center</title>
+
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="/static/styles.css"
+    >
+</head>
+
+<body>
+
+    <div class="app-shell">
+
+        <aside class="sidebar" id="sidebar">
+
+            <div class="brand">
+                <div class="brand-icon">🛰️</div>
+                <div>
+                    <h2>NER Command Center</h2>
+                    <p>Landslide Intelligence & Response</p>
+                </div>
+            </div>
+
+            <nav class="nav-menu">
+                <button class="nav-item active" data-page="overview">
+                    <span>🏠</span> Overview
+                </button>
+
+                <button class="nav-item" data-page="prediction">
+                    <span>🤖</span> Live Risk Prediction
+                </button>
+
+                <button class="nav-item" data-page="gis">
+                    <span>🗺️</span> GIS Risk Map
+                </button>
+
+                <button class="nav-item" data-page="weather">
+                    <span>🌦️</span> Live Weather
+                </button>
+
+                <button class="nav-item" data-page="citizen">
+                    <span>📸</span> Citizen Reporting
+                </button>
+
+                <button class="nav-item" data-page="genai">
+                    <span>🧠</span> GenAI Assistant
+                </button>
+
+                <button class="nav-item" data-page="analytics">
+                    <span>📊</span> Historical Analytics
+                </button>
+            </nav>
+
+            <div class="sidebar-section">
+                <p class="sidebar-label">SYSTEM SCOPE</p>
+                <p>🌏 Region: North Eastern India</p>
+                <p>🗺️ Coverage: 8 States</p>
+                <p>🚨 Alert Mode: Email + Twilio SMS</p>
+            </div>
+
+            <div class="sidebar-card">
+                <div class="status-row">
+                    <span class="live-dot"></span>
+                    <span id="sidebarNetwork">Checking network...</span>
+                </div>
+
+                <div class="small-status">
+                    Pending reports:
+                    <strong id="pendingReports">--</strong>
+                </div>
+
+                <div class="small-status">
+                    Pending alerts:
+                    <strong id="pendingAlerts">--</strong>
+                </div>
+            </div>
+
+            <div class="sidebar-card">
+                <p class="sidebar-label">AUTOMATIC ALERTS</p>
+                <div class="success-chip">
+                    🟢 HIGH / CRITICAL Alerts ON
+                </div>
+                <p class="tiny">
+                    Automatic emergency email with duplicate protection.
+                </p>
+            </div>
+
+        </aside>
+
+
+        <main class="main-content">
+
+            <header class="topbar">
+                <button class="menu-button" id="menuButton">☰</button>
+
+                <div>
+                    <span class="live-label">
+                        <span class="live-dot"></span>
+                        LIVE DISASTER INTELLIGENCE PLATFORM
+                    </span>
+                </div>
+
+                <div class="topbar-time" id="currentTime">--</div>
+            </header>
+
+
+            <!-- ===================================== -->
+            <!-- OVERVIEW -->
+            <!-- ===================================== -->
+
+            <section class="page active" id="page-overview">
+
+                <div class="hero">
+                    <div class="hero-kicker">AI • GIS • WEATHER • RESPONSE</div>
+
+                    <h1>
+                        NER Landslide Early Warning
+                        <span>Command Center</span>
+                    </h1>
+
+                    <p>
+                        AI-powered landslide risk prediction, GIS intelligence,
+                        road connectivity assessment, citizen reporting and
+                        emergency response support for North Eastern India.
+                    </p>
+
+                    <div class="hero-pills">
+                        <span>🟢 System Operational</span>
+                        <span>🗺️ 8 NER States</span>
+                        <span>🧠 AI + GIS + Weather</span>
+                        <span>🚨 Automatic Email + SMS Alerts</span>
+                    </div>
+                </div>
+
+
+                <div class="section-heading">
+                    <div>
+                        <span class="eyebrow">MISSION STATUS</span>
+                        <h2>System Overview</h2>
+                    </div>
+
+                    <button class="secondary-button" id="refreshOverview">
+                        ↻ Refresh
+                    </button>
+                </div>
+
+
+                <div class="metric-grid four">
+                    <div class="metric-card">
+                        <span>🛰️ Regional Coverage</span>
+                        <strong id="overviewStates">--</strong>
+                        <small>NER States</small>
+                    </div>
+
+                    <div class="metric-card">
+                        <span>🏔️ Historical Events</span>
+                        <strong id="overviewEvents">--</strong>
+                        <small>Recorded positive events</small>
+                    </div>
+
+                    <div class="metric-card">
+                        <span>🧠 AI Training Samples</span>
+                        <strong id="overviewSamples">--</strong>
+                        <small>Model dataset records</small>
+                    </div>
+
+                    <div class="metric-card">
+                        <span>🚨 Emergency Alerts</span>
+                        <strong>ON</strong>
+                        <small>HIGH / CRITICAL</small>
+                    </div>
+                </div>
+
+
+                <div class="panel">
+                    <div class="section-heading compact">
+                        <div>
+                            <span class="eyebrow">SERVICE MONITOR</span>
+                            <h2>System Health</h2>
+                        </div>
+                    </div>
+
+                    <div class="health-grid">
+                        <div class="health-item">
+                            <span>🧠 ML Risk Engine</span>
+                            <strong id="healthML">Checking...</strong>
+                        </div>
+
+                        <div class="health-item">
+                            <span>🗺️ GIS Module</span>
+                            <strong id="healthGIS">Checking...</strong>
+                        </div>
+
+                        <div class="health-item">
+                            <span>🌦️ Weather Service</span>
+                            <strong id="healthWeather">Checking...</strong>
+                        </div>
+
+                        <div class="health-item">
+                            <span>📧 Email Service</span>
+                            <strong id="healthEmail">Checking...</strong>
+                        </div>
+
+                        <div class="health-item">
+                            <span>🧠 GenAI / Groq</span>
+                            <strong id="healthGenAI">Checking...</strong>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="section-heading">
+                    <div>
+                        <span class="eyebrow">CAPABILITIES</span>
+                        <h2>Disaster Intelligence Pipeline</h2>
+                    </div>
+                </div>
+
+                <div class="capability-grid">
+                    <div class="capability-card">
+                        <div>🤖</div>
+                        <h3>AI Risk Prediction</h3>
+                        <p>
+                            XGBoost-based risk scoring using rainfall, soil,
+                            terrain, weather and land-cover features.
+                        </p>
+                    </div>
+
+                    <div class="capability-card">
+                        <div>🗺️</div>
+                        <h3>GIS Intelligence</h3>
+                        <p>
+                            Dataset-backed regional risk dots with state-wise
+                            filtering and interactive map inspection.
+                        </p>
+                    </div>
+
+                    <div class="capability-card">
+                        <div>🛣️</div>
+                        <h3>Road Connectivity</h3>
+                        <p>
+                            Risk-aware road status assessment for emergency
+                            access and response planning.
+                        </p>
+                    </div>
+
+                    <div class="capability-card">
+                        <div>📸</div>
+                        <h3>Citizen Reporting</h3>
+                        <p>
+                            Geo-tagged field reports and evidence upload for
+                            faster ground-condition awareness.
+                        </p>
+                    </div>
+
+                    <div class="capability-card">
+                        <div>👁️</div>
+                        <h3>Computer Vision</h3>
+                        <p>
+                            Field-image analysis support for visual hazard
+                            assessment.
+                        </p>
+                    </div>
+
+                    <div class="capability-card">
+                        <div>🚨</div>
+                        <h3>Emergency Alerts</h3>
+                        <p>
+                            Automatic HIGH and CRITICAL email alerts with
+                            duplicate protection.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="pipeline">
+                    <span>🌧️ Weather</span>
+                    <b>→</b>
+                    <span>⛰️ Terrain</span>
+                    <b>→</b>
+                    <span>🌳 Land Cover</span>
+                    <b>→</b>
+                    <span>🧠 XGBoost</span>
+                    <b>→</b>
+                    <span>🗺️ GIS</span>
+                    <b>→</b>
+                    <span>🚨 Response</span>
+                </div>
+
+            </section>
+
+
+            <!-- ===================================== -->
+            <!-- LIVE RISK PREDICTION -->
+            <!-- ===================================== -->
+
+            <section class="page" id="page-prediction">
+
+                <div class="page-title">
+                    <span class="eyebrow">AI RISK ENGINE</span>
+                    <h1>🤖 Live Landslide Risk Prediction</h1>
+                    <p>
+                        Uses the same working Python risk engine from the
+                        original project.
+                    </p>
+                </div>
+
+
+                <div class="two-column-layout">
+
+                    <div class="panel">
+
+                        <form id="predictionForm">
+
+                            <h3>📍 Location</h3>
+
+                            <div class="form-grid two">
+                                <div class="field">
+                                    <label>NER State</label>
+                                    <select id="predictionState" required></select>
+                                </div>
+
+                                <div class="field">
+                                    <label>City / Location</label>
+                                    <input
+                                        id="predictionCity"
+                                        type="text"
+                                        required
+                                    >
+                                </div>
+                            </div>
+
+
+                            <h3>🌧️ Recent Rainfall</h3>
+
+                            <div class="form-grid three">
+                                <div class="field">
+                                    <label>Last 24 Hours (mm)</label>
+                                    <input
+                                        id="rain24"
+                                        type="number"
+                                        min="0"
+                                        step="0.1"
+                                        value="80"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="field">
+                                    <label>Last 3 Days (mm)</label>
+                                    <input
+                                        id="rain3d"
+                                        type="number"
+                                        min="0"
+                                        step="0.1"
+                                        value="180"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="field">
+                                    <label>Last 7 Days (mm)</label>
+                                    <input
+                                        id="rain7d"
+                                        type="number"
+                                        min="0"
+                                        step="0.1"
+                                        value="350"
+                                        required
+                                    >
+                                </div>
+                            </div>
+
+
+                            <h3>💧 Soil Conditions</h3>
+
+                            <div class="form-grid two">
+
+                                <div class="field">
+                                    <label>
+                                        Soil Water Layer 1:
+                                        <strong id="soil1Value">0.40</strong>
+                                    </label>
+
+                                    <input
+                                        id="soil1"
+                                        type="range"
+                                        min="0"
+                                        max="1"
+                                        value="0.40"
+                                        step="0.01"
+                                    >
+                                </div>
+
+                                <div class="field">
+                                    <label>
+                                        Soil Water Layer 2:
+                                        <strong id="soil2Value">0.38</strong>
+                                    </label>
+
+                                    <input
+                                        id="soil2"
+                                        type="range"
+                                        min="0"
+                                        max="1"
+                                        value="0.38"
+                                        step="0.01"
+                                    >
+                                </div>
+
+                            </div>
+
+                            <button class="primary-button" id="predictButton">
+                                🚨 Calculate Landslide Risk
+                            </button>
+
+                            <div class="message" id="predictionMessage"></div>
+
+                        </form>
+
+                    </div>
+
+
+                    <div class="panel result-panel">
+
+                        <div id="predictionEmpty" class="empty-state">
+                            <div>🧠</div>
+                            <h3>Risk Engine Ready</h3>
+                            <p>
+                                Enter current environmental conditions and
+                                calculate the AI risk score.
+                            </p>
+                        </div>
+
+
+                        <div id="predictionResult" class="hidden">
+
+                            <div class="result-header">
+                                <div>
+                                    <span class="eyebrow">RISK ASSESSMENT</span>
+                                    <h2 id="predictionLocation">--</h2>
+                                </div>
+
+                                <span
+                                    class="risk-badge moderate"
+                                    id="predictionRiskBadge"
+                                >
+                                    --
+                                </span>
+                            </div>
+
+
+                            <div class="risk-score-box">
+                                <span>AI Risk Score</span>
+                                <strong id="predictionRiskScore">--</strong>
+                            </div>
+
+
+                            <div class="metric-grid three compact-metrics">
+                                <div class="mini-card">
+                                    <span>Elevation</span>
+                                    <strong id="resultElevation">--</strong>
+                                </div>
+
+                                <div class="mini-card">
+                                    <span>Slope</span>
+                                    <strong id="resultSlope">--</strong>
+                                </div>
+
+                                <div class="mini-card">
+                                    <span>Land Cover</span>
+                                    <strong id="resultLandcover">--</strong>
+                                </div>
+
+                                <div class="mini-card">
+                                    <span>Temperature</span>
+                                    <strong id="resultTemperature">--</strong>
+                                </div>
+
+                                <div class="mini-card">
+                                    <span>Humidity</span>
+                                    <strong id="resultHumidity">--</strong>
+                                </div>
+
+                                <div class="mini-card">
+                                    <span>Pressure</span>
+                                    <strong id="resultPressure">--</strong>
+                                </div>
+                            </div>
+
+
+                            <div class="result-section">
+                                <h3>🔎 Top Risk Drivers</h3>
+                                <div id="riskDrivers"></div>
+                            </div>
+
+
+                            <div class="result-section">
+                                <h3>🛣️ Road Connectivity</h3>
+                                <div id="roadResult" class="info-box"></div>
+                            </div>
+
+
+                            <div class="result-section">
+                                <h3>🚑 Emergency Priority</h3>
+                                <div id="emergencyResult" class="info-box"></div>
+                            </div>
+
+
+                            <div class="result-section">
+                                <h3>⚠️ Recommended Action</h3>
+                                <div id="recommendation" class="warning-box"></div>
+                            </div>
+
+
+                            <div class="result-section">
+                                <h3>🚨 Automatic Emergency Alerts</h3>
+
+                                <div class="alert-channel-grid">
+                                    <div>
+                                        <div class="alert-channel-label">
+                                            📧 Email
+                                        </div>
+                                        <div
+                                            id="automaticEmail"
+                                            class="alert-status-card"
+                                        ></div>
+                                    </div>
+
+                                    <div>
+                                        <div class="alert-channel-label">
+                                            📱 Twilio SMS
+                                        </div>
+                                        <div
+                                            id="automaticSms"
+                                            class="alert-status-card"
+                                        ></div>
+                                    </div>
+                                </div>
+
+                                <p class="alert-helper-text">
+                                    Automatic alerts are triggered only for
+                                    HIGH or CRITICAL AI risk assessments.
+                                </p>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- ===================================== -->
+            <!-- GIS -->
+            <!-- ===================================== -->
+
+            <section class="page" id="page-gis">
+
+                <div class="page-title">
+                    <span class="eyebrow">REGIONAL INTELLIGENCE</span>
+                    <h1>🗺️ GIS Landslide Risk Map</h1>
+                    <p>
+                        Dataset-backed risk markers using the original
+                        Streamlit project's GIS scoring logic.
+                    </p>
+                </div>
+
+
+                <div class="panel">
+
+                    <div class="toolbar">
+
+                        <div class="field toolbar-field">
+                            <label>State Filter</label>
+                            <select id="gisState"></select>
+                        </div>
+
+                        <button class="primary-button small" id="loadGISButton">
+                            🗺️ Load Risk Map
+                        </button>
+
+                        <div class="map-count">
+                            Visible points:
+                            <strong id="gisPointCount">--</strong>
+                        </div>
+
+                    </div>
+
+                    <div class="message" id="gisMessage"></div>
+
+                    <div class="map-legend">
+                        <span><i class="legend-dot low-dot"></i> LOW</span>
+                        <span><i class="legend-dot moderate-dot"></i> MODERATE</span>
+                        <span><i class="legend-dot high-dot"></i> HIGH</span>
+                        <span><i class="legend-dot critical-dot"></i> CRITICAL</span>
+                    </div>
+
+                    <div id="gisMap"></div>
+
+                </div>
+
+            </section>
+
+
+            <!-- ===================================== -->
+            <!-- WEATHER -->
+            <!-- ===================================== -->
+
+            <section class="page" id="page-weather">
+
+                <div class="page-title">
+                    <span class="eyebrow">LIVE ENVIRONMENT</span>
+                    <h1>🌦️ Live Weather Monitoring</h1>
+                    <p>
+                        Fetch current weather using the existing working
+                        weather module.
+                    </p>
+                </div>
+
+
+                <div class="panel narrow">
+
+                    <form id="weatherForm">
+
+                        <div class="field">
+                            <label for="weatherState">State</label>
+                            <select
+                                id="weatherState"
+                                required
+                            ></select>
+                        </div>
+
+                        <div class="field">
+                            <label for="weatherCity">City / Location</label>
+                            <select
+                                id="weatherCity"
+                                required
+                            ></select>
+                        </div>
+
+                        <button class="primary-button" id="weatherButton">
+                            🌦️ Fetch Live Weather
+                        </button>
+
+                        <div class="message" id="weatherMessage"></div>
+
+                    </form>
+
+                </div>
+
+
+                <div class="weather-dashboard hidden" id="weatherResult">
+                    <div class="weather-alert-card" id="weatherHazardCard">
+                        <div>
+                            <span class="eyebrow">LANDSLIDE WEATHER SIGNAL</span>
+                            <h3 id="weatherHazardTitle">Weather Risk Assessment</h3>
+                        </div>
+                        <span class="weather-hazard-badge" id="weatherHazardBadge">--</span>
+                        <p id="weatherHazardText">--</p>
+                    </div>
+                    <div class="metric-grid four">
+                    <div class="metric-card">
+                        <span>🌡️ Temperature</span>
+                        <strong id="weatherTemperature">--</strong>
+                    </div>
+
+                    <div class="metric-card">
+                        <span>💧 Humidity</span>
+                        <strong id="weatherHumidity">--</strong>
+                    </div>
+
+                    <div class="metric-card">
+                        <span>🧭 Pressure</span>
+                        <strong id="weatherPressure">--</strong>
+                    </div>
+
+                    <div class="metric-card">
+                        <span>☁️ Condition</span>
+                        <strong class="small-value" id="weatherCondition">--</strong>
+                    </div>
+                    <div class="metric-card">
+                        <span>💨 Wind Speed</span>
+                        <strong id="weatherWind">--</strong>
+                    </div>
+                    <div class="metric-card">
+                        <span>👁️ Visibility</span>
+                        <strong id="weatherVisibility">--</strong>
+                    </div>
+                    <div class="metric-card">
+                        <span>🌧️ Rainfall</span>
+                        <strong id="weatherRainfall">--</strong>
+                    </div>
+                    <div class="metric-card">
+                        <span>🕒 Updated</span>
+                        <strong class="small-value" id="weatherUpdated">--</strong>
+                    </div>
+                    </div>
+                </div>
+
+            </section>
+
+
+            <!-- ===================================== -->
+            <!-- CITIZEN REPORTING -->
+            <!-- ===================================== -->
+
+            <section class="page" id="page-citizen">
+
+                <div class="page-title">
+                    <span class="eyebrow">FIELD INTELLIGENCE</span>
+                    <h1>📸 Citizen / Field Officer Reporting</h1>
+                    <p>
+                        Submit geo-tagged ground observations with optional
+                        image evidence.
+                    </p>
+                </div>
+
+
+                <div class="two-column-layout">
+
+                    <div class="panel">
+
+                        <form id="reportForm">
+
+                            <div class="form-grid two">
+
+                                <div class="field">
+                                    <label>Reporter Type</label>
+                                    <select id="reporterType">
+                                        <option>Citizen</option>
+                                        <option>Field Officer</option>
+                                        <option>Emergency Responder</option>
+                                    </select>
+                                </div>
+
+                                <div class="field">
+                                    <label>Issue Type</label>
+                                    <select id="issueType">
+                                        <option>Landslide</option>
+                                        <option>Slope Crack</option>
+                                        <option>Road Blockage</option>
+                                        <option>Falling Rocks</option>
+                                        <option>Soil Movement</option>
+                                        <option>Flood / Waterlogging</option>
+                                        <option>Other</option>
+                                    </select>
+                                </div>
+
+                                <div class="field">
+                                    <label>NER State</label>
+                                    <select id="reportState"></select>
+                                </div>
+
+                                <div class="field">
+                                    <label>Latitude</label>
+                                    <input
+                                        id="reportLatitude"
+                                        type="number"
+                                        step="any"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="field">
+                                    <label>Longitude</label>
+                                    <input
+                                        id="reportLongitude"
+                                        type="number"
+                                        step="any"
+                                        required
+                                    >
+                                </div>
+
+                            </div>
+
+                            <button type="button" class="location-button" id="useMyLocationButton">
+                                📍 Use My Current Location
+                            </button>
+                            <div class="location-note" id="locationStatus">
+                                State selection fills a default coordinate; use device location for the actual field position.
+                            </div>
+
+                            <div class="field">
+                                <label>Description</label>
+                                <textarea
+                                    id="reportDescription"
+                                    rows="5"
+                                    placeholder="Describe cracks, debris, blocked road, soil movement or other observed conditions..."
+                                    required
+                                ></textarea>
+                            </div>
+
+                            <div class="field">
+                                <label>Photo Evidence (optional)</label>
+                                <input
+                                    id="reportPhoto"
+                                    type="file"
+                                    accept="image/*"
+                                >
+                            </div>
+
+                            <button class="primary-button" id="reportButton">
+                                📤 Submit Field Report
+                            </button>
+
+                            <div class="message" id="reportMessage"></div>
+
+                        </form>
+
+                    </div>
+
+
+                    <div class="panel">
+
+                        <div class="section-heading compact">
+                            <div>
+                                <span class="eyebrow">RECENT REPORTS</span>
+                                <h2>Ground Intelligence</h2>
+                            </div>
+
+                            <button class="secondary-button" id="refreshReports">
+                                ↻ Refresh
+                            </button>
+                        </div>
+
+                        <div id="reportsList" class="report-list">
+                            <div class="empty-state small">
+                                Loading reports...
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- ===================================== -->
+            <!-- GENAI -->
+            <!-- ===================================== -->
+
+            <section class="page" id="page-genai">
+
+                <div class="page-title">
+                    <span class="eyebrow">DECISION SUPPORT</span>
+                    <h1>🧠 GenAI Landslide Assistant</h1>
+                    <p>
+                        Ask about current risk, preparedness, road impact,
+                        response actions and model interpretation.
+                    </p>
+                </div>
+
+
+                <div class="assistant-context-card" id="assistantContextCard">
+                    <span class="eyebrow">CURRENT AI CONTEXT</span>
+                    <strong id="assistantContextTitle">No live prediction yet</strong>
+                    <p id="assistantContextText">Run Live Risk Prediction and the assistant will automatically use that location's risk context.</p>
+                </div>
+
+                <div class="quick-prompts">
+                    <button type="button" class="quick-prompt" data-prompt="Why is the current landslide risk high?">Why is risk high?</button>
+                    <button type="button" class="quick-prompt" data-prompt="What immediate safety actions should authorities take for the current risk?">Emergency actions</button>
+                    <button type="button" class="quick-prompt" data-prompt="Explain how rainfall, soil moisture and slope affect landslide risk in simple words.">Explain risk drivers</button>
+                    <button type="button" class="quick-prompt" data-prompt="What should citizens avoid during HIGH or CRITICAL landslide risk?">Citizen safety</button>
+                </div>
+
+                <div class="chat-shell">
+
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="chat-message assistant">
+                            <div class="chat-avatar">🧠</div>
+                            <div class="chat-bubble">
+                                I can explain landslide risk, environmental
+                                drivers, road connectivity and emergency
+                                preparedness. Run a live prediction first for
+                                location-specific context.
+                            </div>
+                        </div>
+                    </div>
+
+                    <form class="chat-form" id="genaiForm">
+                        <textarea
+                            id="genaiInput"
+                            rows="2"
+                            placeholder="Ask about landslide risk or emergency response..."
+                            required
+                        ></textarea>
+
+                        <button class="primary-button" id="genaiButton">
+                            Send ➜
+                        </button>
+                    </form>
+
+                    <div class="message" id="genaiMessage"></div>
+
+                </div>
+
+            </section>
+
+
+            <!-- ===================================== -->
+            <!-- ANALYTICS -->
+            <!-- ===================================== -->
+
+            <section class="page" id="page-analytics">
+
+                <div class="page-title">
+                    <span class="eyebrow">HISTORICAL INTELLIGENCE</span>
+                    <h1>📊 Historical Landslide Analytics</h1>
+                    <p>
+                        Explore historical event distribution and environmental
+                        statistics from the training dataset.
+                    </p>
+                </div>
+
+
+                <div class="panel">
+
+                    <div class="toolbar">
+                        <div class="field toolbar-field">
+                            <label>State Filter</label>
+                            <select id="analyticsState"></select>
+                        </div>
+
+                        <button
+                            class="primary-button small"
+                            id="loadAnalyticsButton"
+                        >
+                            📊 Load Analytics
+                        </button>
+                    </div>
+
+                    <div class="message" id="analyticsMessage"></div>
+
+                </div>
+
+
+                <div class="metric-grid two analytics-top">
+                    <div class="metric-card">
+                        <span>🏔️ Historical Records</span>
+                        <strong id="analyticsRecords">--</strong>
+                    </div>
+
+                    <div class="metric-card">
+                        <span>🌏 Selected Region</span>
+                        <strong class="small-value" id="analyticsRegion">--</strong>
+                    </div>
+                </div>
+
+
+                <div class="analytics-insight-grid">
+                    <div class="insight-card">
+                        <span>🔥 Highest Event State</span>
+                        <strong id="analyticsTopState">--</strong>
+                    </div>
+                    <div class="insight-card">
+                        <span>🌧️ Mean 7-Day Rainfall</span>
+                        <strong id="analyticsMeanRain">--</strong>
+                    </div>
+                    <div class="insight-card">
+                        <span>⛰️ Mean Event Slope</span>
+                        <strong id="analyticsMeanSlope">--</strong>
+                    </div>
+                    <div class="insight-card">
+                        <span>📍 Analysis Scope</span>
+                        <strong id="analyticsScope">--</strong>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3>State-wise Historical Distribution</h3>
+                    <div id="stateBars" class="bar-chart"></div>
+                </div>
+
+
+                <div class="two-column-layout">
+
+                    <div class="panel">
+                        <h3>🌧️ Rainfall Statistics</h3>
+                        <div id="rainfallStats" class="stats-table"></div>
+                    </div>
+
+                    <div class="panel">
+                        <h3>⛰️ Terrain Statistics</h3>
+                        <div id="terrainStats" class="stats-table"></div>
+                    </div>
+
+                </div>
+
+
+                <div class="panel">
+                    <h3>Historical Event Preview</h3>
+
+                    <div class="table-wrapper">
+                        <table id="analyticsTable">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+
+    <script
+        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    ></script>
+
+    <script src="/static/app.js"></script>
+
+</body>
+</html>
