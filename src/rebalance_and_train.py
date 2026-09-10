@@ -16,7 +16,11 @@ import numpy as np
 import pandas as pd
 import joblib
 from pathlib import Path
-from xgboost import XGBClassifier
+try:
+    from xgboost import XGBClassifier
+except ImportError:
+    XGBClassifier = None
+from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 
@@ -218,18 +222,12 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 print(f"Training on {len(X_train)} samples, testing on {len(X_test)} samples...")
 
-model = XGBClassifier(
-    n_estimators=300,
-    max_depth=4,
+model = HistGradientBoostingClassifier(
+    max_iter=250,
     learning_rate=0.04,
-    subsample=0.85,
-    colsample_bytree=0.85,
-    reg_alpha=0.1,
-    reg_lambda=2.0,
-    gamma=0.2,
-    eval_metric="logloss",
-    random_state=42,
-    n_jobs=-1
+    max_leaf_nodes=31,
+    min_samples_leaf=15,
+    random_state=42
 )
 
 model.fit(X_train, y_train)
