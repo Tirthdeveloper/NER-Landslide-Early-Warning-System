@@ -364,16 +364,17 @@ def build_road_connectivity_dataset():
     )
 
 
-    os.makedirs(
-        "data/processed",
-        exist_ok=True
-    )
-
-
-    road_df.to_csv(
-        OUTPUT_FILE,
-        index=False
-    )
+    try:
+        os.makedirs(
+            os.path.dirname(OUTPUT_FILE) or "data/processed",
+            exist_ok=True
+        )
+        road_df.to_csv(
+            OUTPUT_FILE,
+            index=False
+        )
+    except OSError:
+        pass
 
 
     return road_df
