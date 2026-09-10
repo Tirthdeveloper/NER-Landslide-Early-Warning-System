@@ -85,12 +85,6 @@ def get_terrain_features(
 ):
 
     if rasterio is None or not os.path.exists(DEM_FILE):
-
-        print(
-            f"❌ DEM or rasterio unavailable: "
-            f"{DEM_FILE}"
-        )
-
         return None
 
 

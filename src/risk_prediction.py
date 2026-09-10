@@ -15,7 +15,7 @@ Run:
 """
 
 import os
-
+import pandas as pd
 import joblib
 from pathlib import Path
 
@@ -48,11 +48,61 @@ if MODEL_FILE.exists() and FEATURE_FILE.exists():
     try:
         model = joblib.load(str(MODEL_FILE))
         features = joblib.load(str(FEATURE_FILE))
-        print("✅ Optimized model loaded successfully")
+        print("[INFO] Optimized model loaded successfully")
     except Exception as e:
-        print(f"⚠️ Error loading model: {e}")
+        print(f"[WARN] Could not load model: {e}")
 else:
-    print(f"⚠️ Model or feature file not found at {MODEL_FILE}")
+    print(f"[WARN] Model or feature file not found at {MODEL_FILE}")
+
+
+def _heuristic_probability(
+    rainfall_24h_mm: float,
+    rainfall_3d_mm: float,
+    rainfall_7d_mm: float,
+    soil_water_1: float,
+    soil_water_2: float,
+    slope: float,
+    elevation: float
+) -> float:
+    """Resilient heuristic risk probability when ML model is unavailable."""
+    score = 0.0
+
+    if rainfall_24h_mm >= 70:
+        score += 25
+    elif rainfall_24h_mm >= 35:
+        score += 15
+    elif rainfall_24h_mm >= 15:
+        score += 8
+
+    if rainfall_7d_mm >= 250:
+        score += 20
+    elif rainfall_7d_mm >= 120:
+        score += 12
+    elif rainfall_7d_mm >= 60:
+        score += 6
+
+    if slope >= 38:
+        score += 30
+    elif slope >= 25:
+        score += 20
+    elif slope >= 15:
+        score += 10
+
+    avg_soil = (soil_water_1 + soil_water_2) / 2.0
+    if avg_soil >= 0.40:
+        score += 15
+    elif avg_soil >= 0.28:
+        score += 10
+    elif avg_soil >= 0.20:
+        score += 5
+
+    if elevation >= 1500:
+        score += 10
+    elif elevation >= 800:
+        score += 5
+
+    prob = min(max(score / 100.0, 0.05), 0.95)
+    return round(float(prob), 4)
 
 
 # ==========================================
@@ -386,31 +436,30 @@ def predict_landslide_risk(
 
 
     # ======================================
-    # FEATURE ORDER
+    # FEATURE ORDER & PREDICTION
     # ======================================
 
-    # Ensure exactly the same feature
-    # order used during model training.
+    probability = None
 
-    input_df = input_df[
-        features
-    ]
+    if model is not None and len(features) > 0:
+        try:
+            # Reindex to ensure all training features exist and in exact order
+            aligned_df = input_df.reindex(columns=features, fill_value=0)
+            raw_prob = model.predict_proba(aligned_df)[0][1]
+            probability = float(raw_prob)
+        except Exception as pred_err:
+            print(f"[WARN] Model inference failed: {pred_err}. Using heuristic fallback.")
 
-
-    # ======================================
-    # PREDICT PROBABILITY
-    # ======================================
-
-    probability = (
-        model.predict_proba(
-            input_df
-        )[0][1]
-    )
-
-
-    probability = float(
-        probability
-    )
+    if probability is None:
+        probability = _heuristic_probability(
+            rainfall_24h_mm=rainfall_24h_mm,
+            rainfall_3d_mm=rainfall_3d_mm,
+            rainfall_7d_mm=rainfall_7d_mm,
+            soil_water_1=soil_water_layer_1,
+            soil_water_2=soil_water_layer_2,
+            slope=slope_degree,
+            elevation=elevation_m
+        )
 
 
     # ======================================

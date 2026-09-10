@@ -709,127 +709,123 @@ def api_overview():
 def api_predict(
     request: RiskRequest
 ):
+    try:
+        if request.state not in NER_STATES:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid NER state."
+            )
 
-    if request.state not in NER_STATES:
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid NER state."
+        result = get_live_risk(
+            city=request.city,
+            rainfall_24h_mm=request.rainfall_24h_mm,
+            rainfall_3d_mm=request.rainfall_3d_mm,
+            rainfall_7d_mm=request.rainfall_7d_mm,
+            soil_water_layer_1=request.soil_water_layer_1,
+            soil_water_layer_2=request.soil_water_layer_2
         )
 
+        if not result.get(
+            "success",
+            False
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail=result.get(
+                    "message",
+                    "Risk prediction failed."
+                )
+            )
 
-    result = get_live_risk(
-        city=request.city,
-        rainfall_24h_mm=request.rainfall_24h_mm,
-        rainfall_3d_mm=request.rainfall_3d_mm,
-        rainfall_7d_mm=request.rainfall_7d_mm,
-        soil_water_layer_1=request.soil_water_layer_1,
-        soil_water_layer_2=request.soil_water_layer_2
-    )
+        risk_inputs = {
+            "rainfall_24h":
+                request.rainfall_24h_mm,
+            "rainfall_3d":
+                request.rainfall_3d_mm,
+            "rainfall_7d":
+                request.rainfall_7d_mm,
+            "soil_water_1":
+                request.soil_water_layer_1,
+            "soil_water_2":
+                request.soil_water_layer_2
+        }
 
-
-    if not result.get(
-        "success",
-        False
-    ):
-        raise HTTPException(
-            status_code=400,
-            detail=result.get(
-                "message",
-                "Risk prediction failed."
+        road_result = assess_road_connectivity(
+            location=(
+                f"{result.get('city', request.city)}, "
+                f"{request.state}"
+            ),
+            risk_score=result.get(
+                "risk_score",
+                0
+            ),
+            risk_level=result.get(
+                "risk_level",
+                "UNKNOWN"
             )
         )
 
-
-    risk_inputs = {
-        "rainfall_24h":
-            request.rainfall_24h_mm,
-
-        "rainfall_3d":
-            request.rainfall_3d_mm,
-
-        "rainfall_7d":
-            request.rainfall_7d_mm,
-
-        "soil_water_1":
-            request.soil_water_layer_1,
-
-        "soil_water_2":
-            request.soil_water_layer_2
-    }
-
-
-    road_result = assess_road_connectivity(
-        location=(
-            f"{result.get('city', request.city)}, "
-            f"{request.state}"
-        ),
-        risk_score=result.get(
-            "risk_score",
-            0
-        ),
-        risk_level=result.get(
-            "risk_level",
-            "UNKNOWN"
-        )
-    )
-
-
-    emergency_result = calculate_emergency_priority(
-        risk_score=result.get(
-            "risk_score",
-            0
-        ),
-        risk_level=result.get(
-            "risk_level",
-            "UNKNOWN"
-        ),
-        road_status=road_result.get(
-            "road_status",
-            "UNKNOWN"
-        ),
-        rainfall_24h_mm=
-            request.rainfall_24h_mm,
-        rainfall_7d_mm=
-            request.rainfall_7d_mm,
-        slope_degree=result.get(
-            "slope_degree",
-            0
-        ),
-        visual_severity=None
-    )
-
-
-    automatic_email = (
-        try_automatic_email(
-            state=request.state,
-            result=result,
-            risk_inputs=risk_inputs,
-            road_result=road_result,
-            emergency_result=emergency_result
-        )
-    )
-
-
-    return {
-        "success": True,
-        "timestamp": get_current_timestamp(),
-        "state": request.state,
-        "risk_inputs": risk_inputs,
-        "risk_drivers":
-            get_risk_driver_summary(
-                result,
-                risk_inputs
+        emergency_result = calculate_emergency_priority(
+            risk_score=result.get(
+                "risk_score",
+                0
             ),
-        "road_connectivity":
-            road_result,
-        "emergency_priority":
-            emergency_result,
-        "automatic_email":
-            automatic_email,
-        "automatic_sms":
-            automatic_email.get("sms", {}),
-        **result
-    }
+            risk_level=result.get(
+                "risk_level",
+                "UNKNOWN"
+            ),
+            road_status=road_result.get(
+                "road_status",
+                "UNKNOWN"
+            ),
+            rainfall_24h_mm=
+                request.rainfall_24h_mm,
+            rainfall_7d_mm=
+                request.rainfall_7d_mm,
+            slope_degree=result.get(
+                "slope_degree",
+                0
+            ),
+            visual_severity=None
+        )
+
+        automatic_email = (
+            try_automatic_email(
+                state=request.state,
+                result=result,
+                risk_inputs=risk_inputs,
+                road_result=road_result,
+                emergency_result=emergency_result
+            )
+        )
+
+        return {
+            "success": True,
+            "timestamp": get_current_timestamp(),
+            "state": request.state,
+            "risk_inputs": risk_inputs,
+            "risk_drivers":
+                get_risk_driver_summary(
+                    result,
+                    risk_inputs
+                ),
+            "road_connectivity":
+                road_result,
+            "emergency_priority":
+                emergency_result,
+            "automatic_email":
+                automatic_email,
+            "automatic_sms":
+                automatic_email.get("sms", {}),
+            **result
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        return {
+            "success": False,
+            "message": f"Risk assessment error: {str(exc)}"
+        }
 
 
 # ==========================================
