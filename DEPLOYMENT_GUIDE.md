@@ -1,34 +1,58 @@
 # NER AI Landslide Early Warning System - Deployment Guide
 
-This guide provides step-by-step instructions to deploy the **NER Landslide Early Warning System MVP**.
+This guide provides step-by-step instructions and architectural analysis for deploying the **NER Landslide Early Warning System MVP**.
 
 ---
 
-## 1. System Architecture Overview
+## 1. System Architecture: Vercel vs Render
 
-The system consists of two primary tiers:
+### Can we use Vercel for BOTH Frontend and Backend instead of Render?
+**YES! In fact, the production deployment is currently running 100% on Vercel.**
+
+Here is how **All-in-One Vercel** compares directly to **Render**:
+
+| Feature / Metric | Vercel (All-in-One Serverless) | Render (Web Service Free Tier) |
+| :--- | :--- | :--- |
+| **Cost** | **100% Free** (Hobby Tier) | **Free** (with strict monthly hour caps) |
+| **Cold Start Latency** | **~1 - 2 seconds** | **50 - 90 seconds** (spins down after 15m idle) |
+| **Architecture / Domains** | **Single unified domain** (`ner-landslide-early-warning-system-nine.vercel.app`) | **Two separate domains** (Frontend on Vercel + Backend on Render) |
+| **CORS Latency** | **Zero CORS issues** (frontend calls `/api/...` directly) | Requires cross-origin preflight requests (`OPTIONS`) on every API call |
+| **Free Quota** | **100,000 requests / day**, 100 GB bandwidth | **750 hours / month** shared across all services |
+| **Container Maintenance** | **Zero Docker needed** (Vercel builds Python natively) | Requires Docker container builds and port handling |
+| **Global CDN** | Edge CDN with worldwide low latency | Single region (e.g. Oregon or Frankfurt) |
+
+---
+
+### Architecture Diagram: All-in-One Vercel
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    End User Browser                     │
-└────────────────────────────┬────────────────────────────┘
-                             │
-            ┌────────────────┴────────────────┐
-            ▼                                 ▼
-┌───────────────────────┐         ┌────────────────────────────────────────┐
-│    Vercel (Free)      │         │   Hugging Face Spaces (Free - 16 GB)   │
-│ ───────────────────── │         │ ────────────────────────────────────── │
-│ Frontend:             │         │ Backend & ML Engine:                   │
-│ - static/index.html   │────────▶│ - converted_app.py (FastAPI)           │
-│ - static/styles.css   │ (REST)  │ - Models/landslide_model_optimized.pkl │
-│ - static/app.js       │         │ - yolov8n.pt (YOLOv8 CV)               │
-│ - Leaflet GIS Map     │         │ - Open-Meteo Weather API               │
-└───────────────────────┘         │ - Groq Cloud GenAI Assistant           │
-                                  └────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────┐
+│                                   End User Browser                                       │
+└────────────────────────────────────────────┬─────────────────────────────────────────────┘
+                                             │
+                                             ▼
+┌──────────────────────────────────────────────────────────────────────────────────────────┐
+│             Vercel Cloud Platform (ner-landslide-early-warning-system-nine.vercel.app)   │
+│                                                                                          │
+│   ┌────────────────────────────────────────┐    ┌────────────────────────────────────┐   │
+│   │   Global Edge CDN                      │    │   Python Serverless Runtime        │   │
+│   │   - static/index.html                  │    │   - api/index.py                   │   │
+│   │   - static/styles.css                  │───▶│   - converted_app.py (FastAPI)     │   │
+│   │   - static/app.js                      │    │   - ML inference & risk assessment │   │
+│   │   - Leaflet GIS Interactive Map        │    │   - OpenWeather & Groq GenAI       │   │
+│   └────────────────────────────────────────┘    └────────────────────────────────────┘   │
+└──────────────────────────────────────────────────────────────────────────────────────────┘
+                                             │ (Model Artifacts Reference)
+                                             ▼
+                     ┌───────────────────────────────────────────────┐
+                     │         Hugging Face Model Hub (Free)         │
+                     │  https://huggingface.co/Tirthptl/             │
+                     │  ner-landslide-models                         │
+                     │  - landslide_model_optimized.pkl              │
+                     │  - model_features_optimized.pkl               │
+                     │  - yolov8n.pt                                 │
+                     └───────────────────────────────────────────────┘
 ```
-
-* **Frontend**: Single-Page Application (HTML5, Vanilla CSS, Vanilla JS, Leaflet.js). Deployed on **Vercel** for fast global CDN delivery.
-* **Backend & ML Models**: FastAPI service running on **Hugging Face Spaces** (Free tier with 16 GB RAM & 2 vCPUs) which easily accommodates PyTorch, YOLOv8, and geospatial libraries.
 
 ---
 
