@@ -8,6 +8,7 @@ numpy
 requests
 python-dotenv
 scikit-learn
+xgboost
 joblib
 langchain-groq
 groq

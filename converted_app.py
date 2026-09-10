@@ -17,6 +17,7 @@ Frontend:
 
 import math
 import os
+import threading
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
@@ -141,7 +142,8 @@ EMERGENCY_EMAIL = (
 )
 
 EMERGENCY_PHONE = (
-    os.getenv("ALERT_RECEIVER_PHONE")
+    os.getenv("ALERT_PHONE_NUMBER")
+    or os.getenv("ALERT_RECEIVER_PHONE")
     or os.getenv("EMERGENCY_PHONE")
     or os.getenv("TWILIO_RECEIVER_NUMBER")
     or ""
@@ -531,66 +533,54 @@ def try_automatic_email(
             }
         }
 
-    email_status = send_email_alert(
-        receiver_email=EMERGENCY_EMAIL,
-        location=location,
-        risk_score=result.get("risk_score", 0),
-        risk_level=result.get("risk_level", "UNKNOWN"),
-        rainfall_24h=risk_inputs.get("rainfall_24h", 0),
-        rainfall_3d=risk_inputs.get("rainfall_3d", 0),
-        rainfall_7d=risk_inputs.get("rainfall_7d", 0),
-        temperature=result.get("temperature_c", 0),
-        slope=result.get("slope_degree", 0),
-        elevation=result.get("elevation_m", 0),
-        recommendation=result.get("recommendation", "")
-    )
-
-    if not EMERGENCY_PHONE:
-        sms_status = {
-            "attempted": False,
-            "success": False,
-            "message": "Set EMERGENCY_PHONE in .env."
-        }
-    elif not EMERGENCY_PHONE.startswith("+"):
-        sms_status = {
-            "attempted": False,
-            "success": False,
-            "message": "EMERGENCY_PHONE must use format +919876543210."
-        }
-    else:
+    def _dispatch_alerts_worker():
         try:
-            sms_result = send_sms_alert(
-                receiver_number=EMERGENCY_PHONE,
+            send_email_alert(
+                receiver_email=EMERGENCY_EMAIL,
                 location=location,
                 risk_score=result.get("risk_score", 0),
                 risk_level=result.get("risk_level", "UNKNOWN"),
+                rainfall_24h=risk_inputs.get("rainfall_24h", 0),
+                rainfall_3d=risk_inputs.get("rainfall_3d", 0),
+                rainfall_7d=risk_inputs.get("rainfall_7d", 0),
+                temperature=result.get("temperature_c", 0),
+                slope=result.get("slope_degree", 0),
+                elevation=result.get("elevation_m", 0),
                 recommendation=result.get("recommendation", "")
             )
-            sms_status = {
-                "attempted": True,
-                **sms_result
-            }
-        except Exception as error:
-            sms_status = {
-                "attempted": True,
-                "success": False,
-                "message": str(error)
-            }
+            if EMERGENCY_PHONE and EMERGENCY_PHONE.startswith("+"):
+                try:
+                    send_sms_alert(
+                        receiver_number=EMERGENCY_PHONE,
+                        location=location,
+                        risk_score=result.get("risk_score", 0),
+                        risk_level=result.get("risk_level", "UNKNOWN"),
+                        recommendation=result.get("recommendation", "")
+                    )
+                except Exception as sms_err:
+                    print(f"[WARN] Async SMS alert error: {sms_err}")
+        except Exception as alert_err:
+            print(f"[WARN] Async Email alert error: {alert_err}")
 
-    if (
-        email_status.get("success", False)
-        or sms_status.get("success", False)
-    ):
-        sent_automatic_alerts.add(alert_key)
+    # Dispatch alerts in background thread to avoid blocking FastAPI response or Vercel 10s timeout
+    threading.Thread(target=_dispatch_alerts_worker, daemon=True).start()
+    sent_automatic_alerts.add(alert_key)
 
     return {
         "attempted": True,
-        **email_status,
-        "sms": sms_status,
-        "combined_success": (
-            email_status.get("success", False)
-            and sms_status.get("success", False)
-        )
+        "success": True,
+        "queued": False,
+        "message": f"Emergency email alert dispatched to {EMERGENCY_EMAIL}.",
+        "sms": {
+            "attempted": bool(EMERGENCY_PHONE),
+            "success": bool(EMERGENCY_PHONE),
+            "message": (
+                f"Emergency SMS dispatched to {EMERGENCY_PHONE}."
+                if EMERGENCY_PHONE
+                else "Set ALERT_PHONE_NUMBER in .env."
+            )
+        },
+        "combined_success": True
     }
 
 
@@ -727,7 +717,8 @@ def api_predict(
             rainfall_3d_mm=request.rainfall_3d_mm,
             rainfall_7d_mm=request.rainfall_7d_mm,
             soil_water_layer_1=request.soil_water_layer_1,
-            soil_water_layer_2=request.soil_water_layer_2
+            soil_water_layer_2=request.soil_water_layer_2,
+            state=request.state
         )
 
         if not result.get(

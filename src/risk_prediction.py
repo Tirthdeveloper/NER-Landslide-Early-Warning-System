@@ -55,6 +55,100 @@ else:
     print(f"[WARN] Model or feature file not found at {MODEL_FILE}")
 
 
+def _calculate_physics_probability(
+    rainfall_24h_mm: float,
+    rainfall_3d_mm: float,
+    rainfall_7d_mm: float,
+    soil_water_1: float,
+    soil_water_2: float,
+    slope: float,
+    elevation: float
+) -> float:
+    """
+    Physics-informed geotechnical risk assessment based on Geological Survey of India (GSI)
+    and National Disaster Management Authority (NDMA) landslide guidelines.
+    Formula: Risk = Terrain Susceptibility x Hydro-meteorological Trigger.
+    """
+    avg_soil = (float(soil_water_1) + float(soil_water_2)) / 2.0
+    r24 = float(rainfall_24h_mm)
+    r7 = float(rainfall_7d_mm)
+    s = float(slope)
+    elev = float(elevation)
+
+    # 1. Rainfall Trigger Index (0.0 to 1.0)
+    rain_score = 0.0
+    if r24 >= 140:
+        rain_score += 40
+    elif r24 >= 100:
+        rain_score += 34
+    elif r24 >= 70:
+        rain_score += 26
+    elif r24 >= 40:
+        rain_score += 18
+    elif r24 >= 20:
+        rain_score += 10
+    elif r24 >= 10:
+        rain_score += 4
+
+    # Cumulative antecedent rain (0 to 30)
+    cum_score = 0.0
+    if r7 >= 350:
+        cum_score += 30
+    elif r7 >= 250:
+        cum_score += 24
+    elif r7 >= 150:
+        cum_score += 16
+    elif r7 >= 80:
+        cum_score += 10
+    elif r7 >= 40:
+        cum_score += 4
+
+    # Soil moisture saturation (0 to 20)
+    soil_score = 0.0
+    if avg_soil >= 0.44:
+        soil_score += 20
+    elif avg_soil >= 0.38:
+        soil_score += 15
+    elif avg_soil >= 0.30:
+        soil_score += 10
+    elif avg_soil >= 0.22:
+        soil_score += 4
+
+    trigger_index = (rain_score + cum_score + soil_score) / 90.0
+
+    # 2. Terrain Susceptibility Factor (0.0 to 1.0) based on GSI NLSM classes
+    if s >= 30.0:
+        slope_factor = 1.00  # Very High
+    elif s >= 20.0:
+        slope_factor = 0.82  # High
+    elif s >= 12.0:
+        slope_factor = 0.62  # Moderate to High
+    elif s >= 6.0:
+        slope_factor = 0.38  # Moderate
+    elif s >= 3.0:
+        slope_factor = 0.12  # Low
+    else:
+        slope_factor = 0.02  # Extremely Low / Flat Plain
+
+    elev_factor = min(max(elev / 2000.0, 0.1), 1.0)
+    terrain_susceptibility = min(slope_factor * (0.7 + 0.3 * elev_factor), 1.0)
+
+    # Dynamic risk calculation: without triggering precipitation, steep slopes don't slide.
+    # On flat ground, heavy rain causes surface waterlogging / floods, NOT landslides.
+    physics_prob = terrain_susceptibility * (0.15 + 0.85 * trigger_index)
+
+    # Hard physical boundary constraints
+    if s < 3.0:
+        physics_prob = min(physics_prob, 0.12)
+    elif s < 6.0:
+        physics_prob = min(physics_prob, 0.28)
+
+    if r24 < 12.0 and r7 < 40.0 and avg_soil < 0.28:
+        physics_prob = min(physics_prob, 0.20)
+
+    return round(float(min(max(physics_prob, 0.02), 0.98)), 4)
+
+
 def _heuristic_probability(
     rainfall_24h_mm: float,
     rainfall_3d_mm: float,
@@ -65,44 +159,15 @@ def _heuristic_probability(
     elevation: float
 ) -> float:
     """Resilient heuristic risk probability when ML model is unavailable."""
-    score = 0.0
-
-    if rainfall_24h_mm >= 70:
-        score += 25
-    elif rainfall_24h_mm >= 35:
-        score += 15
-    elif rainfall_24h_mm >= 15:
-        score += 8
-
-    if rainfall_7d_mm >= 250:
-        score += 20
-    elif rainfall_7d_mm >= 120:
-        score += 12
-    elif rainfall_7d_mm >= 60:
-        score += 6
-
-    if slope >= 38:
-        score += 30
-    elif slope >= 25:
-        score += 20
-    elif slope >= 15:
-        score += 10
-
-    avg_soil = (soil_water_1 + soil_water_2) / 2.0
-    if avg_soil >= 0.40:
-        score += 15
-    elif avg_soil >= 0.28:
-        score += 10
-    elif avg_soil >= 0.20:
-        score += 5
-
-    if elevation >= 1500:
-        score += 10
-    elif elevation >= 800:
-        score += 5
-
-    prob = min(max(score / 100.0, 0.05), 0.95)
-    return round(float(prob), 4)
+    return _calculate_physics_probability(
+        rainfall_24h_mm=rainfall_24h_mm,
+        rainfall_3d_mm=rainfall_3d_mm,
+        rainfall_7d_mm=rainfall_7d_mm,
+        soil_water_1=soil_water_1,
+        soil_water_2=soil_water_2,
+        slope=slope,
+        elevation=elevation
+    )
 
 
 # ==========================================
@@ -352,6 +417,11 @@ def predict_landslide_risk(
     # BASE FEATURES
     # ======================================
 
+    # Adjust OpenWeather sea-level normalized pressure to local ground station pressure
+    adj_pressure = float(surface_pressure_hpa)
+    if adj_pressure > 980.0 and float(elevation_m) > 80.0:
+        adj_pressure = round(adj_pressure * ((1.0 - 0.0000225577 * float(elevation_m)) ** 5.25588), 1)
+
     input_data = {
 
         "rainfall_24h_mm":
@@ -373,7 +443,7 @@ def predict_landslide_risk(
             soil_water_layer_2,
 
         "surface_pressure_hpa":
-            surface_pressure_hpa,
+            adj_pressure,
 
         "elevation_m":
             elevation_m,
@@ -439,27 +509,60 @@ def predict_landslide_risk(
     # FEATURE ORDER & PREDICTION
     # ======================================
 
-    probability = None
+    raw_prob = None
 
     if model is not None and len(features) > 0:
         try:
             # Reindex to ensure all training features exist and in exact order
             aligned_df = input_df.reindex(columns=features, fill_value=0)
-            raw_prob = model.predict_proba(aligned_df)[0][1]
-            probability = float(raw_prob)
+            raw_val = model.predict_proba(aligned_df)[0][1]
+            raw_prob = float(raw_val)
         except Exception as pred_err:
             print(f"[WARN] Model inference failed: {pred_err}. Using heuristic fallback.")
 
-    if probability is None:
-        probability = _heuristic_probability(
-            rainfall_24h_mm=rainfall_24h_mm,
-            rainfall_3d_mm=rainfall_3d_mm,
-            rainfall_7d_mm=rainfall_7d_mm,
-            soil_water_1=soil_water_layer_1,
-            soil_water_2=soil_water_layer_2,
-            slope=slope_degree,
-            elevation=elevation_m
-        )
+    # Calculate physics-grounded geotechnical probability
+    physics_prob = _calculate_physics_probability(
+        rainfall_24h_mm=rainfall_24h_mm,
+        rainfall_3d_mm=rainfall_3d_mm,
+        rainfall_7d_mm=rainfall_7d_mm,
+        soil_water_1=soil_water_layer_1,
+        soil_water_2=soil_water_layer_2,
+        slope=slope_degree,
+        elevation=elevation_m
+    )
+
+    if raw_prob is not None:
+        # Geotechnical blending: validated ML model weighted with physical bounds
+        combined = 0.55 * raw_prob + 0.45 * physics_prob
+
+        # Geotechnical safety caps
+        s = float(slope_degree)
+        r24 = float(rainfall_24h_mm)
+        r7 = float(rainfall_7d_mm)
+        avg_soil = (float(soil_water_layer_1) + float(soil_water_layer_2)) / 2.0
+
+        if s < 3.0:
+            combined = min(combined, 0.12)
+        elif s < 6.0:
+            combined = min(combined, 0.28)
+
+        if r24 < 12.0 and r7 < 40.0 and avg_soil < 0.28:
+            combined = min(combined, 0.20)
+
+        # Operational hazard level alignments:
+        # Extreme deluge on steep mountain slopes -> CRITICAL
+        if (r24 >= 100.0 or r7 >= 280.0) and s >= 14.0 and avg_soil >= 0.35:
+            combined = max(combined, 0.82)
+        # Heavy rain on vulnerable mountain slopes -> HIGH
+        elif (r24 >= 60.0 or r7 >= 180.0) and s >= 8.0 and avg_soil >= 0.30:
+            combined = max(combined, 0.65)
+        # Moderate rain on hills -> MODERATE
+        elif (r24 >= 25.0 or r7 >= 75.0) and s >= 6.0 and avg_soil >= 0.25:
+            combined = max(combined, 0.38)
+
+        probability = float(min(max(combined, 0.02), 0.98))
+    else:
+        probability = physics_prob
 
 
     # ======================================

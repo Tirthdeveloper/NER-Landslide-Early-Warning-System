@@ -1652,7 +1652,10 @@ elif page == "🤖 Live Risk Prediction":
                     soil_water_1,
 
                 soil_water_layer_2=
-                    soil_water_2
+                    soil_water_2,
+
+                state=
+                    selected_state
             )
 
 
