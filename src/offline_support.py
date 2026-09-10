@@ -19,11 +19,14 @@ import socket
 import uuid
 from datetime import datetime
 
-QUEUE_DIR = "data/offline_queue"
+QUEUE_DIR = "/tmp/offline_queue" if os.environ.get("VERCEL") else "Data/offline_queue"
 REPORT_QUEUE_FILE = os.path.join(QUEUE_DIR, "pending_reports.json")
 ALERT_QUEUE_FILE = os.path.join(QUEUE_DIR, "pending_alerts.json")
 
-os.makedirs(QUEUE_DIR, exist_ok=True)
+try:
+    os.makedirs(QUEUE_DIR, exist_ok=True)
+except OSError:
+    pass
 
 
 def is_online(timeout=2):

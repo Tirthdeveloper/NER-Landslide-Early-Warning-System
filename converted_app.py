@@ -73,16 +73,24 @@ app.add_middleware(
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
 DATA_FILE = BASE_DIR / "Data" / "Processed" / "ner_landslide_training.csv"
-TEMP_DIR = BASE_DIR / "data" / "citizen_reports" / "temp"
+TEMP_DIR = Path("/tmp/citizen_reports/temp") if os.environ.get("VERCEL") else BASE_DIR / "Data" / "citizen_reports" / "temp"
 
-STATIC_DIR.mkdir(parents=True, exist_ok=True)
-TEMP_DIR.mkdir(parents=True, exist_ok=True)
+try:
+    STATIC_DIR.mkdir(parents=True, exist_ok=True)
+except OSError:
+    pass
 
-app.mount(
-    "/static",
-    StaticFiles(directory=str(STATIC_DIR)),
-    name="static"
-)
+try:
+    TEMP_DIR.mkdir(parents=True, exist_ok=True)
+except OSError:
+    pass
+
+if STATIC_DIR.exists():
+    app.mount(
+        "/static",
+        StaticFiles(directory=str(STATIC_DIR)),
+        name="static"
+    )
 
 NER_STATES = [
     "Assam",

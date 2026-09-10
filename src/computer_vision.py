@@ -49,15 +49,17 @@ MODEL_FILE = (
 # CREATE FOLDERS
 # ==========================================
 
-os.makedirs(
-    MODEL_FOLDER,
-    exist_ok=True
-)
-
-os.makedirs(
-    OUTPUT_FOLDER,
-    exist_ok=True
-)
+try:
+    os.makedirs(
+        MODEL_FOLDER,
+        exist_ok=True
+    )
+    os.makedirs(
+        OUTPUT_FOLDER,
+        exist_ok=True
+    )
+except OSError:
+    pass
 
 
 # ==========================================

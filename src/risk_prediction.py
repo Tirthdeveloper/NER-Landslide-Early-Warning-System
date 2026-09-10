@@ -17,80 +17,42 @@ Run:
 import os
 
 import joblib
-import pandas as pd
+from pathlib import Path
 
+BASE_DIR = Path(__file__).resolve().parent.parent
 
-# ==========================================
-# FILE PATHS
-# ==========================================
+candidate_models = [
+    BASE_DIR / "Models" / "landslide_model_optimized.pkl",
+    BASE_DIR / "models" / "landslide_model_optimized.pkl",
+    Path("Models/landslide_model_optimized.pkl"),
+    Path("models/landslide_model_optimized.pkl")
+]
+MODEL_FILE = next((p for p in candidate_models if p.exists()), candidate_models[0])
 
-MODEL_FILE = (
-    "Models/landslide_model_optimized.pkl"
-    if os.path.exists("Models/landslide_model_optimized.pkl")
-    else "models/landslide_model_optimized.pkl"
-)
-
-FEATURE_FILE = (
-    "Models/model_features_optimized.pkl"
-    if os.path.exists("Models/model_features_optimized.pkl")
-    else "models/model_features_optimized.pkl"
-)
-
-
-# ==========================================
-# CHECK FILES
-# ==========================================
-
-if not os.path.exists(MODEL_FILE):
-
-    print(
-        f"❌ Optimized model not found: "
-        f"{MODEL_FILE}"
-    )
-
-    raise SystemExit
-
-
-if not os.path.exists(FEATURE_FILE):
-
-    print(
-        f"❌ Optimized feature file not found: "
-        f"{FEATURE_FILE}"
-    )
-
-    raise SystemExit
-
+candidate_features = [
+    BASE_DIR / "Models" / "model_features_optimized.pkl",
+    BASE_DIR / "models" / "model_features_optimized.pkl",
+    Path("Models/model_features_optimized.pkl"),
+    Path("models/model_features_optimized.pkl")
+]
+FEATURE_FILE = next((p for p in candidate_features if p.exists()), candidate_features[0])
 
 # ==========================================
 # LOAD MODEL
 # ==========================================
 
-print(
-    "\nLoading optimized landslide model..."
-)
+model = None
+features = []
 
-model = joblib.load(
-    MODEL_FILE
-)
-
-features = joblib.load(
-    FEATURE_FILE
-)
-
-print(
-    "✅ Optimized model loaded successfully"
-)
-
-
-print(
-    "\nModel Features:"
-)
-
-for feature in features:
-
-    print(
-        f"- {feature}"
-    )
+if MODEL_FILE.exists() and FEATURE_FILE.exists():
+    try:
+        model = joblib.load(str(MODEL_FILE))
+        features = joblib.load(str(FEATURE_FILE))
+        print("✅ Optimized model loaded successfully")
+    except Exception as e:
+        print(f"⚠️ Error loading model: {e}")
+else:
+    print(f"⚠️ Model or feature file not found at {MODEL_FILE}")
 
 
 # ==========================================

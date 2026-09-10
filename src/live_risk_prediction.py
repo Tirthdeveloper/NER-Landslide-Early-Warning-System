@@ -30,21 +30,25 @@ from src.weather_api import get_current_weather
 from src.risk_prediction import predict_landslide_risk
 
 
-# ==========================================
-# FILE PATHS
-# ==========================================
+from pathlib import Path
 
-DEM_FILE = (
-    "Data/raw/dem/ner_dem_90m.tiff"
-    if os.path.exists("Data/raw/dem/ner_dem_90m.tiff")
-    else "data/raw/dem/ner_dem_90m.tiff"
-)
+BASE_DIR = Path(__file__).resolve().parent.parent
 
-LANDCOVER_FOLDER = (
-    "Data/raw/landcover"
-    if os.path.exists("Data/raw/landcover")
-    else "data/raw/landcover"
-)
+candidate_dems = [
+    BASE_DIR / "Data" / "raw" / "dem" / "ner_dem_90m.tiff",
+    BASE_DIR / "data" / "raw" / "dem" / "ner_dem_90m.tiff",
+    Path("Data/raw/dem/ner_dem_90m.tiff"),
+    Path("data/raw/dem/ner_dem_90m.tiff")
+]
+DEM_FILE = str(next((p for p in candidate_dems if p.exists()), candidate_dems[0]))
+
+candidate_lc = [
+    BASE_DIR / "Data" / "raw" / "landcover",
+    BASE_DIR / "data" / "raw" / "landcover",
+    Path("Data/raw/landcover"),
+    Path("data/raw/landcover")
+]
+LANDCOVER_FOLDER = str(next((p for p in candidate_lc if p.exists()), candidate_lc[0]))
 
 
 # ==========================================

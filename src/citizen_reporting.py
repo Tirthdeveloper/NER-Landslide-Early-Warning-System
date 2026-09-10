@@ -27,36 +27,34 @@ from datetime import datetime
 
 
 # ==========================================
-# FILE PATHS
-# ==========================================
+from pathlib import Path
 
-REPORT_FOLDER = (
-    "data/citizen_reports"
-)
+BASE_DIR = Path(__file__).resolve().parent.parent
 
-UPLOAD_FOLDER = (
-    "data/citizen_reports/uploads"
-)
-
-REPORT_FILE = (
-    "data/citizen_reports/"
-    "citizen_reports.csv"
-)
-
+if os.environ.get("VERCEL"):
+    REPORT_FOLDER = "/tmp/citizen_reports"
+    UPLOAD_FOLDER = "/tmp/citizen_reports/uploads"
+    REPORT_FILE = "/tmp/citizen_reports/citizen_reports.csv"
+else:
+    REPORT_FOLDER = str(BASE_DIR / "Data" / "citizen_reports")
+    UPLOAD_FOLDER = str(BASE_DIR / "Data" / "citizen_reports" / "uploads")
+    REPORT_FILE = str(BASE_DIR / "Data" / "citizen_reports" / "citizen_reports.csv")
 
 # ==========================================
 # CREATE FOLDERS
 # ==========================================
 
-os.makedirs(
-    REPORT_FOLDER,
-    exist_ok=True
-)
-
-os.makedirs(
-    UPLOAD_FOLDER,
-    exist_ok=True
-)
+try:
+    os.makedirs(
+        REPORT_FOLDER,
+        exist_ok=True
+    )
+    os.makedirs(
+        UPLOAD_FOLDER,
+        exist_ok=True
+    )
+except OSError:
+    pass
 
 
 # ==========================================
