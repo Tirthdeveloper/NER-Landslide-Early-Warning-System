@@ -30,13 +30,18 @@ from ultralytics import YOLO
 # FILE PATHS
 # ==========================================
 
-MODEL_FOLDER = "models/cv"
+MODEL_FOLDER = (
+    "Models/cv"
+    if os.path.exists("Models/cv")
+    else "models/cv"
+)
 
 OUTPUT_FOLDER = "outputs/cv"
 
-MODEL_FILE = os.path.join(
-    MODEL_FOLDER,
-    "yolov8n.pt"
+MODEL_FILE = (
+    os.path.join(MODEL_FOLDER, "yolov8n.pt")
+    if os.path.exists(os.path.join(MODEL_FOLDER, "yolov8n.pt"))
+    else ("yolov8n.pt" if os.path.exists("yolov8n.pt") else os.path.join(MODEL_FOLDER, "yolov8n.pt"))
 )
 
 

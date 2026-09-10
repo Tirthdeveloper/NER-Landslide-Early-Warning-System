@@ -35,13 +35,15 @@ from src.risk_prediction import predict_landslide_risk
 # ==========================================
 
 DEM_FILE = (
-    "data/raw/dem/"
-    "ner_dem_90m.tiff"
+    "Data/raw/dem/ner_dem_90m.tiff"
+    if os.path.exists("Data/raw/dem/ner_dem_90m.tiff")
+    else "data/raw/dem/ner_dem_90m.tiff"
 )
 
 LANDCOVER_FOLDER = (
-    "data/raw/"
-    "landcover"
+    "Data/raw/landcover"
+    if os.path.exists("Data/raw/landcover")
+    else "data/raw/landcover"
 )
 
 

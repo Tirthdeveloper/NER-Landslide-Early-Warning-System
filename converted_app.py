@@ -24,6 +24,7 @@ from typing import Any, Optional
 import pandas as pd
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr
@@ -55,6 +56,18 @@ app = FastAPI(
     title="NER Landslide Early Warning System",
     version="2.0.0",
     description="FastAPI backend for HTML/CSS/JavaScript frontend."
+)
+
+# ==========================================
+# CORS MIDDLEWARE
+# ==========================================
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 BASE_DIR = Path(__file__).resolve().parent

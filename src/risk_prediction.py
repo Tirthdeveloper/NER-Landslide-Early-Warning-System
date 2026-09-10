@@ -25,13 +25,15 @@ import pandas as pd
 # ==========================================
 
 MODEL_FILE = (
-    "models/"
-    "landslide_model_optimized.pkl"
+    "Models/landslide_model_optimized.pkl"
+    if os.path.exists("Models/landslide_model_optimized.pkl")
+    else "models/landslide_model_optimized.pkl"
 )
 
 FEATURE_FILE = (
-    "models/"
-    "model_features_optimized.pkl"
+    "Models/model_features_optimized.pkl"
+    if os.path.exists("Models/model_features_optimized.pkl")
+    else "models/model_features_optimized.pkl"
 )
 
 
