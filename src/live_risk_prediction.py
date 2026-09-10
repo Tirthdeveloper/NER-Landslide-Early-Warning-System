@@ -24,7 +24,11 @@ import os
 import glob
 
 import numpy as np
-import rasterio
+
+try:
+    import rasterio
+except (ImportError, Exception):
+    rasterio = None
 
 from src.weather_api import get_current_weather
 from src.risk_prediction import predict_landslide_risk
@@ -80,10 +84,10 @@ def get_terrain_features(
     longitude
 ):
 
-    if not os.path.exists(DEM_FILE):
+    if rasterio is None or not os.path.exists(DEM_FILE):
 
         print(
-            f"❌ DEM file missing: "
+            f"❌ DEM or rasterio unavailable: "
             f"{DEM_FILE}"
         )
 
@@ -268,6 +272,9 @@ def get_landcover_features(
     latitude,
     longitude
 ):
+
+    if rasterio is None:
+        return None
 
     tif_files = glob.glob(
         os.path.join(

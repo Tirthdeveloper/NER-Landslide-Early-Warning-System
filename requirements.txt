@@ -12,4 +12,3 @@ joblib
 langchain-groq
 groq
 twilio
-rasterio
