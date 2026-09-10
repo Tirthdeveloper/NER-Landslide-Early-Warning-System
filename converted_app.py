@@ -70,6 +70,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.middleware("http")
+async def fix_vercel_path(request: Request, call_next):
+    path_param = request.query_params.get("path")
+    if path_param:
+        clean_path = path_param.split("?")[0].lstrip("/")
+        request.scope["path"] = f"/api/{clean_path}"
+    return await call_next(request)
+
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
 DATA_FILE = BASE_DIR / "Data" / "Processed" / "ner_landslide_training.csv"
@@ -1737,14 +1746,4 @@ def api_config():
             },
         "emergency_email":
             EMERGENCY_EMAIL
-    }
-
-
-@app.api_route("/api/{catchall:path}", methods=["GET", "POST"])
-def catchall_api(request: Request, catchall: str = ""):
-    return {
-        "url_path": request.url.path,
-        "scope_path": request.scope.get("path"),
-        "catchall": catchall,
-        "routes": [r.path for r in app.routes if hasattr(r, "path")]
     }
