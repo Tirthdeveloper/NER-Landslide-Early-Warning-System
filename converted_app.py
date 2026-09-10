@@ -23,7 +23,7 @@ from typing import Any, Optional
 
 import pandas as pd
 from dotenv import load_dotenv
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -1737,4 +1737,14 @@ def api_config():
             },
         "emergency_email":
             EMERGENCY_EMAIL
+    }
+
+
+@app.api_route("/api/{catchall:path}", methods=["GET", "POST"])
+def catchall_api(request: Request, catchall: str = ""):
+    return {
+        "url_path": request.url.path,
+        "scope_path": request.scope.get("path"),
+        "catchall": catchall,
+        "routes": [r.path for r in app.routes if hasattr(r, "path")]
     }
