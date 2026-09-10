@@ -196,7 +196,12 @@ class MultilingualAlertRequest(BaseModel):
     location: str
     risk_level: str
     risk_score: float
-    recommendation: str
+    recommendation: Optional[str] = ""
+    rainfall_24h: Optional[float] = 0.0
+    rainfall_7d: Optional[float] = 0.0
+    road_status: Optional[str] = "MONITOR"
+    priority_level: Optional[str] = "STANDARD"
+    response_time: Optional[str] = "IMMEDIATE"
 
 
 # ==========================================
@@ -1314,27 +1319,24 @@ def api_alert_languages():
 def api_multilingual_alert(
     request: MultilingualAlertRequest
 ):
-
     try:
         result = generate_multilingual_alert(
             language=request.language,
             location=request.location,
-            risk_level=request.risk_level,
             risk_score=request.risk_score,
-            recommendation=request.recommendation
+            risk_level=request.risk_level,
+            rainfall_24h=request.rainfall_24h or 0.0,
+            rainfall_7d=request.rainfall_7d or 0.0,
+            road_status=request.road_status or "MONITOR",
+            priority_level=request.priority_level or "STANDARD",
+            response_time=request.response_time or "IMMEDIATE"
         )
-
-    except TypeError:
-        # Keeps compatibility if the existing helper
-        # accepts positional arguments instead.
-        result = generate_multilingual_alert(
-            request.language,
-            request.location,
-            request.risk_level,
-            request.risk_score,
-            request.recommendation
-        )
-
+    except Exception as e:
+        result = {
+            "error": str(e),
+            "subject": f"NER Landslide {request.risk_level} Alert - {request.location}",
+            "message": f"Landslide alert for {request.location}. Risk score: {request.risk_score:.1f}%."
+        }
 
     return {
         "success": True,
